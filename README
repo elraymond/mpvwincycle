@@ -1,0 +1,18 @@
+mpvwincycle
+===========
+
+Script to switch between multiple mpv media player windows on Linux.
+
+What?
+-----
+
+If you, like me, use to have multiple mpv windows open, at some point
+you start looking for a convenient, keyboard driven way to switch
+between them.
+
+And what would "switching" mean, precisely? It means shifting the
+unmute status from one window to another. Enlarge a window while doing
+that. And optionally give it the focus. All this at once, with a
+single key binding, and in a cyclic fashion through all open windows.
+
+Providing such functionality is what this script tries to accomplish.
