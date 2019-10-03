@@ -1,0 +1,40 @@
+#!/bin/bash
+
+# my user name, home is /home/$me
+me=user
+# absolute path to mpv executable
+mpv=/usr/bin/mpv
+
+
+#
+# mpv IPC sockets
+#
+
+# socket directory
+socket_dir=/home/$me/.config/mpv/socket
+# create directory if necessary
+[ -d "$socket_dir" ] || mkdir -p "$socket_dir"
+# clean socket directory if no mpv instance is running
+pgrep -f "$mpv " >/dev/null || rm -f ${socket_dir}/*
+# now define precise socket for this particular mpv instance;
+# we use the PID of this shell process to do that, so we need to
+# perform an 'exec mpv' further down or else this won't work
+socket=${socket_dir}/$$
+
+
+#
+# other options we want to use
+#
+
+# no console output if mpv isn't launched from a shell
+[ -t 0 ] || extra_opts=--really-quiet
+# if another mpv instance is already running start this one muted
+pgrep -f "$mpv " >/dev/null && extra_opts="$extra_opts --mute"
+
+
+#
+# launch mpv executable
+#
+
+# use absolute path to executable, to not recursively call this script
+exec $mpv --input-ipc-server="$socket" $extra_opts "$@"
