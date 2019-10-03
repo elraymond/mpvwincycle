@@ -20,7 +20,8 @@ from pprint import pformat
 
 # number of workspace/desktop this script should exclusively operate on; set to
 # None to always operate on current desktop
-mpv_desktop = 0
+#mpv_desktop = 0
+mpv_desktop = None
 # window aspect ratio we want
 ar = 16/9
 # large window width
@@ -45,7 +46,9 @@ fifo = home + '/.mpvwincycle.fifo'
 # we expect mpv sockets to be in this directory and to be named after
 # PID
 mpv_socket_dir = home + '/.config/mpv/socket/'
-
+# the desktop/workspace we're going to operate on;
+# this variable is potentially modified during operation
+mpv_desktop_active = mpv_desktop
 
 ###
 ### diagnostic helpers
@@ -249,7 +252,7 @@ class MPVClientList:
             self.inc         = 0
 
             self.s      = s
-            self.active = s.actclass == 'mpv' and s.desktop == mpv_desktop
+            self.active = s.actclass == 'mpv' and s.desktop == mpv_desktop_active
 
             ###
             ### mpv windows in _NET_CLIENT_LIST order (= order in
@@ -257,7 +260,7 @@ class MPVClientList:
 
             self.wins        = [w for w in s.wins
                                 if w.get_wm_class() and w.get_wm_class()[1] == 'mpv'
-                                and s.e.getWmDesktop(w) == mpv_desktop]
+                                and s.e.getWmDesktop(w) == mpv_desktop_active]
             self.num_wins    = len(self.wins)
             # our wrapper classes around windows
             self.clients     = [MPVClient(s, w) for w in self.wins]
@@ -289,7 +292,7 @@ class MPVClientList:
 
             self.wins_st    = [w for w in s.wins_st
                                if w.get_wm_class() and w.get_wm_class()[1] == 'mpv'
-                               and s.e.getWmDesktop(w) == mpv_desktop]
+                               and s.e.getWmDesktop(w) == mpv_desktop_active]
             self.clients_st = sorted(self.clients, key=lambda c: self.wins_st.index(c.win))
 
             ###
@@ -963,7 +966,7 @@ def main():
     e  = ewmh.EWMH()
     cr = CommandReader()
 
-    global mpv_desktop
+    global mpv_desktop_active
     global layout_tiled
     global layout_pip
 
@@ -990,7 +993,7 @@ def main():
             # always manage mpv windows on the current desktop only;
             # 'None' means always manage windows only on current
             # desktop
-            if mpv_desktop == None: mpv_desktop = s.desktop
+            if mpv_desktop == None: mpv_desktop_active = s.desktop
 
             mpv_list = MPVClientList(s)
             if not mpv_list:
@@ -1010,7 +1013,7 @@ def main():
 
             if not cmd.focus_only:
                 call_list.append(mpv_list.rotate_audio) # move unmute status
-                if not (cmd.audio_only or s.desktop != mpv_desktop):
+                if not (cmd.audio_only or s.desktop != mpv_desktop_active):
                     if cmd.next_l_tile :
                         layout_tiled = (layout_tiled + 1) % 8
                         func = mpv_list.reset_tile
