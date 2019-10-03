@@ -872,7 +872,7 @@ class Screen:
             self.workarea = e.getWorkArea()
             self.actwin   = e.getActiveWindow() # currently active window
             self.actname  = e.getWmName(self.actwin) # its class
-            self.actclass = self.actwin.get_wm_class()[1] if self.actwin.get_wm_class() else None # its class
+            self.actclass = self.actwin.get_wm_class()[1] if self.actwin and self.actwin.get_wm_class() else None # its class
             self.wins     = e.getClientList() # all windows in normal order
             self.wins_st  = e.getClientListStacking() # all windows in stacking order
 
