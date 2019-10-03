@@ -733,11 +733,16 @@ class MPVSockDispatcher():
                     outputs.remove(s)
                 for s in readable:
                     ret = s.recv(1014).decode("utf8", "strict").rstrip()
-                    inputs.remove(s)
-                    # we evaluate the returned json as a literal
-                    # python dictionary; this will probably croak with
-                    # operations other than set/unset mute
-                    retlist[sockets.index(s)] = eval(ret.replace('true','True').replace('false','False'))
+                    # unrelated event messages may be pushed to our socket by mpv; so keep reading 
+                    # until a message arrives that looks like a valid response to our request
+                    ret = re.findall(r'{[^}]*"error":[^}]*}', ret)
+                    if ret:
+                        # we evaluate the returned json as a literal
+                        # python dictionary; this will probably croak with
+                        # operations other than set/unset mute
+                        retlist[sockets.index(s)] = eval(ret[0].replace('true','True').replace('false','False'))
+                        # done reading on this socket
+                        inputs.remove(s)
 
             n_success = sum([1 for r in retlist if r and r['error'] == 'success'])
             self.ok = n_success == n_sockets
