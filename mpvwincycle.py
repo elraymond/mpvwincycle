@@ -2,6 +2,7 @@
 
 import sys
 import os
+import getpass
 import traceback
 import socket
 import select
@@ -14,28 +15,36 @@ from pprint import pformat
 
 
 ###
-### variables to be modified by user
+### variables to be modified by user if he/she likes to
 ###
 
-# the fifo this script reads commands from
-fifo = '/home/user/.mpvwincycle.fifo'
-# we expect mpv sockets to be in this directory and to be named after
-# PID
-mpv_socket_dir = '/home/user/.config/mpv/socket/'
-# number of desktop this script should exclusively operate on; set to
-# 'None' to always operate on current desktop
+# number of workspace/desktop this script should exclusively operate on; set to
+# None to always operate on current desktop
 mpv_desktop = 0
 # window aspect ratio we want
 ar = 16/9
-# large window width, for reset methods
+# large window width
 largew = 1280
 # ... and height
 largeh = int(largew/ar)
 # layouts to start with
 layout_tiled = 6
 layout_pip = 1
-
+# enable debug output
 do_debug = True
+
+
+#
+# other globals
+#
+
+# current home directory
+home = os.environ['HOME']
+# the fifo this script reads commands from
+fifo = home + '/.mpvwincycle.fifo'
+# we expect mpv sockets to be in this directory and to be named after
+# PID
+mpv_socket_dir = home + '/.config/mpv/socket/'
 
 
 ###

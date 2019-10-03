@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# my user name, home is /home/$me
-me=user
+# current home directory
+home=$HOME
 # absolute path to mpv executable
 mpv=/usr/bin/mpv
 
@@ -11,7 +11,7 @@ mpv=/usr/bin/mpv
 #
 
 # socket directory
-socket_dir=/home/$me/.config/mpv/socket
+socket_dir=$home/.config/mpv/socket
 # create directory if necessary
 [ -d "$socket_dir" ] || mkdir -p "$socket_dir"
 # clean socket directory if no mpv instance is running
