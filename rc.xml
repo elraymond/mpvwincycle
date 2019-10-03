@@ -1,0 +1,113 @@
+<!-- NOTE:
+     This is only a snippet of an Openbox rc.xml file, to
+     demonstrate the key bindings I use to drive the
+     mpvwincycle.py script. plus some brief explanations
+     of what these bindings do.
+
+     In those definitions, by the way, key abbreviations
+     are defined as follows:
+     W is the Hyper/Windows key
+     A is Alt
+     C is Control.
+-->
+<keybind key="W-C-Left">
+  <!-- rotate windows, sound and geomertry, left -->
+  <action name="Execute">
+    <command>sh -c "echo p > /home/ghermann/.mpvwincycle.fifo"</command>
+  </action>
+</keybind>
+<keybind key="W-C-Right">
+  <!-- rotate windows, sound and geomertry, right -->
+  <action name="Execute">
+    <command>sh -c "echo n > /home/ghermann/.mpvwincycle.fifo"</command>
+  </action>
+</keybind>
+<keybind key="W-A-Left">
+  <!-- rotate sound only left, leave geometries intact -->
+  <action name="Execute">
+    <command>sh -c "echo pa > /home/ghermann/.mpvwincycle.fifo"</command>
+  </action>
+</keybind>
+<keybind key="W-A-Right">
+  <!-- rotate sound only right, leave geometries intact -->
+  <action name="Execute">
+    <command>sh -c "echo na > /home/ghermann/.mpvwincycle.fifo"</command>
+  </action>
+</keybind>
+<keybind key="C-A-Left">
+  <!-- rotate windows focus only left, leave sound and geometries intact  -->
+  <action name="Execute">
+    <command>sh -c "echo pf > /home/ghermann/.mpvwincycle.fifo"</command>
+  </action>
+</keybind>
+<keybind key="C-A-Right">
+  <!-- rotate windows focus only right, leave sound and geometries intact  -->
+  <action name="Execute">
+    <command>sh -c "echo nf > /home/ghermann/.mpvwincycle.fifo"</command>
+  </action>
+</keybind>
+<keybind key="W-C-space">
+  <!-- reset all windows to tiled layout, a binding I use all the time
+       to get all windows back into a defined, sane state;
+       think of it as the "home" button -->
+  <action name="Execute">
+    <command>sh -c "echo r > /home/ghermann/.mpvwincycle.fifo"</command>
+  </action>
+</keybind>
+<keybind key="W-A-space">
+  <!-- arrange windows into pip layout -->
+  <action name="Execute">
+    <command>sh -c "echo R > /home/ghermann/.mpvwincycle.fifo"</command>
+  </action>
+</keybind>
+<keybind key="C-A-space">
+  <!-- cycle through 8 tiled layout variants -->
+  <action name="Execute">
+    <command>sh -c "echo l > /home/ghermann/.mpvwincycle.fifo"</command>
+  </action>
+</keybind>
+<keybind key="W-C-A-space">
+  <!-- cycle through 8 pip layout variants -->
+  <action name="Execute">
+    <command>sh -c "echo L > /home/ghermann/.mpvwincycle.fifo"</command>
+  </action>
+</keybind>
+<keybind key="W-C-Up">
+  <!-- switch topmost two windows, both sound and geometries,
+       useful in pip or when one window is maximized -->
+  <action name="Execute">
+    <command>sh -c "echo t > /home/ghermann/.mpvwincycle.fifo"</command>
+  </action>
+</keybind>
+<keybind key="W-C-Down">
+  <!-- switch topmost two windows, both sound and geometries,
+       useful in pip or when one window is maximized -->
+  <action name="Execute">
+    <command>sh -c "echo t > /home/ghermann/.mpvwincycle.fifo"</command>
+  </action>
+</keybind>
+<keybind key="W-A-Up">
+  <!-- switch topmost two windows, but only sound, leave geometries intact -->
+  <action name="Execute">
+    <command>sh -c "echo ta > /home/ghermann/.mpvwincycle.fifo"</command>
+  </action>
+</keybind>
+<keybind key="W-A-Down">
+  <!-- switch topmost two windows, but only sound, leave geometries intact -->
+  <action name="Execute">
+    <command>sh -c "echo ta > /home/ghermann/.mpvwincycle.fifo"</command>
+  </action>
+</keybind>
+<keybind key="C-A-Up">
+  <!-- switch topmost two windows, but only window focus, leave sound and geometries intact -->
+  <action name="Execute">
+    <command>sh -c "echo tf > /home/ghermann/.mpvwincycle.fifo"</command>
+  </action>
+</keybind>
+<keybind key="C-A-Down">
+  <!-- switch topmost two windows, but only window focus, leave sound and geometries intact -->
+  <action name="Execute">
+    <command>sh -c "echo tf > /home/ghermann/.mpvwincycle.fifo"</command>
+  </action>
+</keybind>
+ 
