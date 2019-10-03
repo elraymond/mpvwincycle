@@ -1,18 +1,196 @@
 mpvwincycle
 ===========
 
-Script to switch between multiple mpv media player windows on Linux.
+Python 3 script to aid in quick switching between multiple mpv media player
+windows, on Linux running an EWMH compliant window manager.
 
-What?
------
 
-If you, like me, use to have multiple mpv windows open, at some point
-you start looking for a convenient, keyboard driven way to switch
-between them.
+Motivation
+----------
 
-And what would "switching" mean, precisely? It means shifting the
-unmute status from one window to another. Enlarge a window while doing
-that. And optionally give it the focus. All this at once, with a
-single key binding, and in a cyclic fashion through all open windows.
+Well, nothing better than an example to demonstrate things, so maybe take a look
+at this:
+https://github.com/elraymond/mpvwincycle/blob/master/screens/tiled.6.jpg
 
-Providing such functionality is what this script tries to accomplish.
+What you see is a typical desktop workspace layout of mine. On the left an Emacs
+window running twitter. On the right 3 mpv windows, one larger and two smaller
+ones. And on the far right a dock area with gkrellm running in it. So let's talk
+about the 3 mpv windows, because that's what this little project is about.
+
+In the shown configuration, the large window has my focus of attention, and it
+is the only one that is not muted. But now let's say there's a commercial break
+happening. Wouldn't it be nice to quickly switch to another one of those mpv
+windows? Meaning to quickly enlarge another one and make it the only one that
+produces sound? Well, that's at least what I thought, so I wrote me a little
+Python helper script to accomplish exactly that.
+
+More precisely, what this script does is read text commands from a FIFO and
+then, according to the command issued, manipulate the window geometries and
+mute/unmute statuses of those running mpv instances. To, for example, rotate
+cyclically through all those windows.
+
+To accomplish this it needs two things though. An EWMH compliant window manager
+it can talk to. Openbox in my case, and that's effectively the only one I have
+tested with. And a well defined IPC socket for each mpv instance it can
+communicate with, for the mute/unmute operations. For this, I use a wrapper
+shell script that launches the mpv binary with the appropriate command line
+options.
+
+But then another thing is needed, too, to make switching "quick". Namely a
+sufficiently configurable window manager that allows you to bind commands like
+echo p > $HOME/.mpvwincycle.fifo
+to a key of your choice. So that you really can cycle through windows with a
+single key combo.
+
+And that's already the gist of it.
+
+
+Operation
+---------
+
+The mpvwincycle.py Python script, when launched, creates a FIFO
+$HOME/.mpvwincycle.fifo
+in your home directory and then waits for commands it can read from it. So those
+have to come from somewhere, like "echo" calls issued through key bindings.
+
+Right now these commands are just single text letters, and the actions they can
+initiate are roughly these
+
+- arrange all open mpv windows into one of eight "tiled" layouts
+- arrange windows into one of eight "PIP" (picture in picture) style layouts
+- cyclically rotate through windows, by manipulating geometries and sound
+- switch between topmost windows, by manipulating geometries and sound.
+
+For examples of those eight layouts see the "screens" directory. They're
+basically defined by where the large window goes (top, bottom, left, right) and
+how the smaller windows are arranged along it (horizontally, vertically).
+
+The PIP variant is slightly different, in that one window is maximized while it
+also keeps the window focus, and one other window is put on top of it by
+enabling the "stay on top" window manager bit. And "rotating" now means that the
+maximized window stays fixed while all remaining windows are rotated through the
+"on top" position. Additionally, there's the switch operation which makes the
+maximized window the small "on top" one and vice versa.
+
+Note though how I just said that the script manipulates the "on top" bit when
+using a PIP layout. Which means that if you now start dragging around those
+windows with your mouse you may find them in a state you feel is confusing.
+That's why I switch between different layouts (tiled, PIP) exclusively with
+commands issued through my script, because then those bits get cleared. A tiled
+layout on the other hand should be safe, in the sense that all windows should be
+in a sane state so that you can manually drag them around as you like without
+experiencing any surprises.
+
+Finally, as said, there needs to be an mpv IPC socket for each running instance
+through which the script can issue its mute/unmute operations. This socket would
+have a path like this
+$HOME/.config/mpv/socket/18327
+where 18327 is the PID of the according mpv instance. And it has to be created
+by mpv itself, that's why we need a wrapper script to supply the appropriate
+command line options.
+
+One more thing, note that the script does not maintain state between the
+commands it executes, except the particular layout number that was used. So you
+can kill it at any time if you want, start it again and it just continues to
+function normally.
+
+
+What's in this directory?
+-------------------------
+
+Well,
+
+- the screens directory with example screenshots.
+- the mpvwincycle.py Python script, which does all the work
+- an mpv wrapper shell script, to provide for sockets
+- an example rc.xml file snippet, with Openbox keybindings I use plus explanations.
+
+So regarding the commands the Python script reads and understands the rc.xml file
+can serve as sort of a documentation.
+
+
+What do I need to do?
+---------------------
+
+First, make sure your HOME environment variable is set correctly. Because both
+the shell wrapper and the Python script make use of it. Which means that,
+ideally, this variable should be set by the script your login manager executes,
+so that the variable is properly defined when your desktop environment or window
+manager are launched in the first place.
+
+Then, take a look at the wrapper script and see if the absolute path to the mpv
+binary is correct. If not, adjust. After that put the script into a directory
+that's before that of the mpv binary's directory in your PATH.
+Like when
+PATH=~/bin:/usr/bin
+put the script into ~/bin so that each time you call "mpv" the script is
+launched and not the binary. This way we now always have our well defined
+sockets available, to talk to the mpv instances.
+
+Now look at the top of the mpvwincycle.py script file, to see if you want to
+customize some of those variables. Candidates are the width of the large window
+and the aspect ratio of all windows. Choose values that make sense for your
+desktop size. You can also define your preferred tiled/pip layout numbers there.
+And finally there's a desktop number I explain later.
+
+That done you can run the script from a shell (terminal emulator) to test it.
+Enable debug output (also a variable in the script) to see a lot of output fly
+by about what's going on once you feed commands into the FIFO.
+
+Open a few mpv windows (via the wrapper script, as described above), and try for
+example
+echo r > $HOME/.mpvwincycle.fifo
+This should put all windows into the default tiled layout and mute all except
+one. More examples can be found in the rc.xml file.
+
+Finally, if everything seems to work for you and you want to use the script,
+launch the script in your desktop environment startup script (in my case that's
+$HOME/.config/openbox/autostart) so that it's always running in the background.
+Finally define key bindings that execute all those "echo" commands, as
+demonstrated in rc.xml. Et voila, you're ready to share the comfortable mpv
+window handling experience I have.
+
+
+Some additional remarks
+-----------------------
+
+There's a few peculiarities worth mentioning.
+
+First, the script can be told to exclusively work on one specific
+desktop/workspace or on always the current one. I for example have 6 workspaces,
+but all my mpv windows are always on workspace 0. So let's say I do work on
+workspace 3 with my headset on and just want to switch audio between windows on
+workspace 0, because I don't like what I'm hearing right now. With the variable
+mpv_desktop set to 0 in the script that's exactly what happens when I "rotate".
+Which is exactly what I would want, because the current desktop number 3 has no
+mpv windows anyway, just work stuff.
+
+Next, note that the script does no re-stacking of windows. That's because
+there's not sane way of doing that without flicker if you happen to have
+another, possibly maximized, window on top of the mpv windows, where again you
+might be doing work. This is relevant because you may arrange mpv windows by
+hand in an overlapping fashion, then rotate them and find that the overlapping
+is now sort of screwed up. Again, that's because no restacking is done,
+purposefully, so that a tiled layout, where windows don't overlap, really is
+best.
+
+Then, note that the rotation of geometries also rotates the window focus. But
+*only* when an mpv windows has the focus in the first place, otherwise it leaves
+the focus untouched. That, again, to not disturb any work you might be doing in
+a different, active window.
+
+Finally, when talking about "rotating" windows I've always talked about shifting
+both around, geometries and sound. But you can also just rotate the sound around
+without touching the geometries. Or just the window focus. See the rc.xml file
+for the bindings I use for that.
+
+
+Full disclosure
+---------------
+
+To close, note that I'm not a Python programmer. I wrote the script just to make
+life a little easier for myself, and have been using it for well over a year, all
+day and night so to speak. But seeing how it's so incredibly useful for me I
+thought I might just as well share it.
+
+FIN.
