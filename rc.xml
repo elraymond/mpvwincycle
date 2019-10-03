@@ -1,7 +1,7 @@
 <!-- NOTE:
      This is only a snippet of an Openbox rc.xml file, to
      demonstrate the key bindings I use to drive the
-     mpvwincycle.py script. plus some brief explanations
+     mpvwincycle.py script, plus some brief explanations
      of what these bindings do.
 
      In those definitions, by the way, key abbreviations

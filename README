@@ -38,7 +38,7 @@ options.
 
 But then another thing is needed, too, to make switching "quick". Namely a
 sufficiently configurable window manager that allows you to bind commands like
-echo p > $HOME/.mpvwincycle.fifo
+echo r > $HOME/.mpvwincycle.fifo
 to a key of your choice. So that you really can cycle through windows with a
 single key combo.
 
@@ -53,7 +53,8 @@ $HOME/.mpvwincycle.fifo
 in your home directory and then waits for commands it can read from it. So those
 have to come from somewhere, like "echo" calls issued through key bindings.
 
-Right now these commands are just single text letters, and the actions they can
+Right now these commands are just single or double character texts (I should
+have chosen something more descriptive, I know), and the actions they can
 initiate are roughly these
 
 - arrange all open mpv windows into one of eight "tiled" layouts
@@ -69,14 +70,14 @@ The PIP variant is slightly different, in that one window is maximized while it
 also keeps the window focus, and one other window is put on top of it by
 enabling the "stay on top" window manager bit. And "rotating" now means that the
 maximized window stays fixed while all remaining windows are rotated through the
-"on top" position. Additionally, there's the switch operation which makes the
+"on top" position. Additionally, there's the "switch" operation which makes the
 maximized window the small "on top" one and vice versa.
 
 Note though how I just said that the script manipulates the "on top" bit when
 using a PIP layout. Which means that if you now start dragging around those
 windows with your mouse you may find them in a state you feel is confusing.
 That's why I switch between different layouts (tiled, PIP) exclusively with
-commands issued through my script, because then those bits get cleared. A tiled
+commands issued through the script, because then those bits get cleared. A tiled
 layout on the other hand should be safe, in the sense that all windows should be
 in a sane state so that you can manually drag them around as you like without
 experiencing any surprises.
@@ -133,9 +134,9 @@ and the aspect ratio of all windows. Choose values that make sense for your
 desktop size. You can also define your preferred tiled/pip layout numbers there.
 And finally there's a desktop number I explain later.
 
-That done you can run the script from a shell (terminal emulator) to test it.
-Enable debug output (also a variable in the script) to see a lot of output fly
-by about what's going on once you feed commands into the FIFO.
+That done you can run the Python script from a shell (terminal emulator) to test
+it. Enable debug output (also a variable in the script) to see a lot of output
+fly by about what's going on once you feed commands into the FIFO.
 
 Open a few mpv windows (via the wrapper script, as described above), and try for
 example
@@ -144,7 +145,7 @@ This should put all windows into the default tiled layout and mute all except
 one. More examples can be found in the rc.xml file.
 
 Finally, if everything seems to work for you and you want to use the script,
-launch the script in your desktop environment startup script (in my case that's
+launch it in your desktop environment startup script (in my case that's
 $HOME/.config/openbox/autostart) so that it's always running in the background.
 Finally define key bindings that execute all those "echo" commands, as
 demonstrated in rc.xml. Et voila, you're ready to share the comfortable mpv
@@ -171,11 +172,11 @@ another, possibly maximized, window on top of the mpv windows, where again you
 might be doing work. This is relevant because you may arrange mpv windows by
 hand in an overlapping fashion, then rotate them and find that the overlapping
 is now sort of screwed up. Again, that's because no restacking is done,
-purposefully, so that a tiled layout, where windows don't overlap, really is
-best.
+purposefully. So a tiled layout, where windows don't overlap, really is the best
+choice.
 
 Then, note that the rotation of geometries also rotates the window focus. But
-*only* when an mpv windows has the focus in the first place, otherwise it leaves
+*only* when an mpv window has the focus in the first place, otherwise it leaves
 the focus untouched. That, again, to not disturb any work you might be doing in
 a different, active window.
 
