@@ -18,10 +18,10 @@ from pprint import pformat
 ### variables to be modified by user if he/she likes to
 ###
 
-# number of workspace/desktop this script should exclusively operate on; set to
-# None to always operate on current desktop
-#mpv_desktop = 0
-mpv_desktop = None
+# default number of workspace/desktop this script should exclusively operate on;
+# set to None to always operate on current desktop
+#mpv_desktop = 0 # manage mpv windows on desktop number 0 exclusively
+mpv_desktop = None # always manage mpv windows on the desktop that is current
 # window aspect ratio we want
 ar = 16/9
 # large window width
@@ -46,8 +46,8 @@ fifo = home + '/.mpvwincycle.fifo'
 # we expect mpv sockets to be in this directory and to be named after
 # PID
 mpv_socket_dir = home + '/.config/mpv/socket/'
-# the desktop/workspace we're going to operate on;
-# this variable is potentially modified during operation
+# the desktop/workspace we're actually operating on; this variable is assigned the
+# current desktop number during operation if mpv_desktop == None
 mpv_desktop_active = mpv_desktop
 
 ###
