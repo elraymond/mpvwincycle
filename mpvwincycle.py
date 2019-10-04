@@ -2,7 +2,8 @@
 
 import sys
 import os
-import getpass
+import signal
+import daemon
 import traceback
 import socket
 import select
@@ -98,6 +99,10 @@ def error(arg):
 
 def rotate_list(l, n):
     return l[n:] + l[:n]
+
+# signal handler for daemonized mode
+def shutdown(signum, frame):
+    sys.exit(0)
 
 
 ##########
@@ -1031,7 +1036,7 @@ def main():
             # implementation depends on this order
             for f in reversed(call_list): f()
 
-        except KeyboardInterrupt:
+        except (KeyboardInterrupt, SystemExit):
             raise
         except:
             traceback.print_exc(file=sys.stdout)
@@ -1048,4 +1053,11 @@ def main():
 ### let's roll
 ###
 if __name__ == "__main__":
-    main()
+
+    # don't detach from terminal when in debug mode
+    if do_debug:
+        main()
+    # else daemonize this process
+    else:
+        with daemon.DaemonContext(signal_map={signal.SIGINT: shutdown, signal.SIGTERM: shutdown}):
+            main()
