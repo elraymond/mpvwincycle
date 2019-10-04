@@ -35,9 +35,9 @@ layout_pip = 1
 do_debug = True
 
 
-#
-# other globals
-#
+###
+### other globals
+###
 
 # current home directory
 home = os.environ['HOME']
@@ -640,7 +640,7 @@ class MPVClientList:
     ###
 
 
-    ### mpv socket messaging methhod, for mute/unmute
+    ### mpv socket messaging method, for mute/unmute
     ###
     def get_set_mute_status(self, current=None):
 
