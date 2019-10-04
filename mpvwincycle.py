@@ -82,7 +82,7 @@ def debug_obj(o):
         return tmp
 
     print('Debug: >>> ' + type(o).__name__, file=sys.stderr)
-    print(indent(pformat(remove_keys(vars(o))), sys.stderr))
+    print(indent(pformat(remove_keys(vars(o)))), file=sys.stderr)
     print('Debug: <<< ', file=sys.stderr)
 
 def warning(arg):
