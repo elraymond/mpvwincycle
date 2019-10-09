@@ -155,7 +155,7 @@ class MPVClient:
             self.hdiff = fg.height - wg.height # diff between outer frame/win height
 
             # individual border widths/heights
-            self.lb_w  = wg.x # left border width
+            self.lb_w  = wg.x # left border width (position of win inside parent frame)
             self.tb_h  = wg.y # top border height
             self.bb_h  = fg.height - wg.height - wg.y # bottom border height
             self.rb_w  = fg.width - wg.width - wg.x # right border width
@@ -777,89 +777,146 @@ class Layouter:
         assert(screen)
 
         self.s        = screen
-        self.wdiff    = wdiff
-        self.hdiff    = hdiff
-        self.layout   = l
-        self.collapse = collapse
+        self.wdiff    = wdiff   # window border decoration width, sum of both sides
+        self.hdiff    = hdiff   # window border decoration height, sum of both sides
+        self.layout   = l       # layout number
+        self.collapse = collapse # whether to collapse all small windows into one position,
+                                 # for pip layout
 
+        # we now calculate the dimensions of the smaller windows, given the screen space and
+        # the dimensions of the large one; this calculation includes border decorations
+
+        # height of (inner) small window in a top/down arrangement w/ respect to large window
+        # the small windows are then arranged horizontally
         h_h = self.s.wa_h - (largeh + 2 * self.hdiff)
+        # according width of small window
         h_w = int(h_h * ar)
+        # width of (inner) small window in a left/right arrangement w/ respect to large window
+        # the small windows are then arranged vertically
         v_w = self.s.wa_w - (largew + 2 * self.wdiff)
+        # according height of small window
         v_h = int(v_w / ar)
 
-        self.h = [h_w, h_h]
-        self.v = [v_w, v_h]
-        self.H = [h_w + wdiff, h_h + hdiff]
-        self.V = [v_w + wdiff, v_h + hdiff]
-        self.l = [largew, largeh]
-        self.L = [largew + wdiff, largeh + hdiff]
+        self.h = [h_w, h_h] # inner frame dimensions for horizontally arranged small windows
+        self.v = [v_w, v_h] # inner frame dimensions for vertically arranged small windows
+        self.H = [h_w + wdiff, h_h + hdiff] # according outer frame dimensions
+        self.V = [v_w + wdiff, v_h + hdiff] # according outer frame dimensions
+        self.l = [largew, largeh] # inner frame dimensions of large window
+        self.L = [largew + wdiff, largeh + hdiff] # outer frame dimensions of large window
 
+        # the 4 possible positions of the large window in work area
         self.l_layouts = [
+            # bottom left
             [self.s.wa_x, self.s.wa_y + self.s.wa_h - self.L[1]],
+            # bottom right
             [self.s.wa_x + self.s.wa_w - self.L[0] , self.s.wa_y + self.s.wa_h - self.L[1]],
+            # top left
             [self.s.wa_x, self.s.wa_y],
+            # top right
             [self.s.wa_x + self.s.wa_w - self.L[0] , self.s.wa_y]
         ]
 
+        # parameters for _h,_v (even entries) or _v,_h (odd entries)
         self.s_layouts = [
-            # horizontal, top, left to right
-            [[True, True, False], [False, True, True, True]],
-            # vertical, right, bottom up
-            [[False, False, False, True], [ False, True, True]],
-            # horizontal, top, right to left
-            [[False, True, False], [True, True, True, True]],
-            # vertical, left, bottom up
-            [[True, False, False, True], [True, True, True]],
-            # horizontal, bottom, left to right
-            [[True, False, False], [False, False, True, False]],
-            # vertical, right, top down
-            [[False, True, False, False], [False, False, True]],
-            # horizontal, bottom, right to left
-            [[False, False, False], [True, False, True, False]],
-            # vertical, left, top down
-            [[True, True, False, False], [True, False, True]]
+
+            # the following comments describe how small windows are arranged, in terms of
+            # - whether they are arranged in horizontal or vertical fashion
+            # - work area border where they are placed (top, bottom, left, right)
+            # - direction of window arrangement
+
+            # horizontal, top, left to right,     then vertical, right, top to bottom
+            [[True, True, False, False],          [False, True, True, True]],
+            # vertical, right, bottom to top,     then horizontal, top, right to left
+            [[False, False, False, False],        [ False, True, True, True]],
+            # horizontal, top, right to left,     then vertical, left, top to bottom
+            [[False, True, False, False],         [True, True, True, True]],
+            # vertical, left, bottom up,          then horizontal, top, left to right
+            [[True, False, False, False],         [True, True, True, True]],
+            # horizontal, bottom, left to right,  then vertical, right, bottom to top
+            [[True, False, False, False],         [False, False, True, True]],
+            # vertical, right, top down,          then horizontal, bottom, right to left
+            [[False, True, False, False],         [False, False, True, True]],
+            # horizontal, bottom, right to left,  then vertical, left, bottom to top
+            [[False, False, False, False],        [True, False, True, True]],
+            # vertical, left, top down,           then horizontal, bottom, left to right
+            [[True, True, False, False],          [True, False, True, True]]
         ]
 
     def yield_small_geometries(self):
         a,b = self.s_layouts[self.layout]
-        if len(a) < 4:
+        if self.layout % 2 == 0:
+            # arrange windows horizontally first, then vertically
             C = chain(self._h(*a), self._v(*b))
         else:
+            # arrange windows vertically first, then horizontally
             C = chain(self._v(*a), self._h(*b))
         for c in C:
             yield c
 
-    def _v(self, left=True, top=True, keep_going = False, offset=False):
+    # consecutively yield geometries of vertically arranged windows
+    def _v(self, left=True, top=True, keep_going = False, tail=False):
 
+        # horizontal position of all windows, either left or right border of work area
         x = self.s.wa_x if left else self.s.wa_x + self.s.wa_w - self.V[0]
 
-        Y = [self.s.wa_y, self.s.wa_y + self.s.wa_h - self.V[1] - self.H[1]]
-        if offset: Y = [ y + self.H[1] for y in Y]
+        # vertical position we begin with, either top or bottom of work area
+        Y = [self.s.wa_y, self.s.wa_y + self.s.wa_h - self.V[1]]
+        # max vertical screen space we're going to fill up, in terms of where
+        # the edge of a window goes
+        M = self.s.wa_h - self.V[1]/2
 
+        # if tail is true leave room for horizontally arranged windows
+        if tail:
+            Y = [ Y[0] + self.H[1], Y[1] - self.H[1]]
+            M -= self.H[1]
+
+        # vertical starting position
         y = Y[0] if top else Y[1]
+        # direction of progress
         sign = 1 if top else -1
-
+        # in pip layout (collapse true) we don't offset windows at all
         offset = 0 if self.collapse else self.V[1]
-        total = self.V[1]
-        while total < Y[1] - Y[0] + self.V[1]/2 or keep_going:
-            y = min(max(Y[0], y), Y[1])
+
+        total = 0
+        while total < M or keep_going:
+            # make sure y is set so that the window stays within the work area
+            y = min( max( self.s.wa_y, y ), self.s.wa_y + self.s.wa_h - self.V[1] )
             yield [x, y, self.v[0], self.v[1]]
             y += sign * offset
+            total += offset
 
-    def _h(self, left = True, top = True, keep_going = False):
+    # consecutively yield geometries of horizontally arranged windows
+    def _h(self, left = True, top = True, keep_going = False, tail = False):
 
+        # vertical position, either at top or bottom of work area
+        # vertial position of all windows, either top or right bottom of work area
         y = self.s.wa_y if top else self.s.wa_y + self.s.wa_h - self.H[1]
 
+        # horizontal position we begin with, either at left or right border of work area
         X = [self.s.wa_x, self.s.wa_x + self.s.wa_w - self.H[0]]
-        x = X[0] if left else X[1]
-        sign = 1 if left else -1
+        # max horizonantal screen space we're going to fill up, in terms of where
+        # the edge of a window goes
+        M = self.s.wa_w - self.H[0]/2
 
+        # if tail is true leave room for horizontally arranged windows
+        if tail:
+            X = [ X[0] + self.V[0], X[1] - self.V[0]]
+            M -= self.V[0]
+
+        # horizontal starting position
+        x = X[0] if left else X[1]
+        # direction of progress
+        sign = 1 if left else -1
+        # in pip layout (collapse true) we don't offset windows at all
         offset = 0 if self.collapse else self.H[0]
-        total = self.H[0]
-        while total < X[1] - X[0] + self.H[0]/2 or keep_going:
-            x = min(max(X[0], x), X[1])
+
+        total = 0
+        while total < M or keep_going:
+            # make sure x is set so that the window stays within the work area
+            x = min( max( self.s.wa_x, x ), self.s.wa_x + self.s.wa_w - self.H[0] )
             yield [x, y, self.h[0], self.h[1]]
             x += sign * offset
+            total += offset
 
 
 ###
