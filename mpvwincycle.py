@@ -772,6 +772,8 @@ class MPVSockDispatcher():
 
 class Layouter:
 
+    # collapse means don't distribute small windows across work area but rather put them all
+    # (i.e. collapse them all into) the same position; this is True for PIP layouts
     def __init__(self, screen=None, wdiff=0, hdiff=0, l = 0, collapse = False):
 
         assert(screen)
@@ -804,7 +806,7 @@ class Layouter:
         self.l = [largew, largeh] # inner frame dimensions of large window
         self.L = [largew + wdiff, largeh + hdiff] # outer frame dimensions of large window
 
-        # the 4 possible positions of the large window in work area
+        # the 4 possible positions of the large window in the work area
         self.l_layouts = [
             # bottom left
             [self.s.wa_x, self.s.wa_y + self.s.wa_h - self.L[1]],
@@ -816,45 +818,50 @@ class Layouter:
             [self.s.wa_x + self.s.wa_w - self.L[0] , self.s.wa_y]
         ]
 
-        # parameters for _h,_v (even entries) or _v,_h (odd entries)
+        # parameters for _h,_v calls (even array entries) or _v,_h calls (odd array entries)
         self.s_layouts = [
 
             # the following comments describe how small windows are arranged, in terms of
             # - whether they are arranged in horizontal or vertical fashion
-            # - work area border where they are placed (top, bottom, left, right)
-            # - direction of window arrangement
+            # - work area border where the first window is placed (top, bottom, left, right)
+            # - direction of window arrangement.
+            # Horizontal or vertical is determined by the array index (see yield_small_geometries);
+            # even index means horizontal, odd vertical.
 
             # horizontal, top, left to right,     then vertical, right, top to bottom
-            [[True, True, False, False],          [False, True, True, True]],
+            [[True, True],                        [False, True]],
             # vertical, right, bottom to top,     then horizontal, top, right to left
-            [[False, False, False, False],        [ False, True, True, True]],
+            [[False, False],                      [ False, True]],
             # horizontal, top, right to left,     then vertical, left, top to bottom
-            [[False, True, False, False],         [True, True, True, True]],
+            [[False, True],                       [True, True]],
             # vertical, left, bottom up,          then horizontal, top, left to right
-            [[True, False, False, False],         [True, True, True, True]],
+            [[True, False],                       [True, True]],
             # horizontal, bottom, left to right,  then vertical, right, bottom to top
-            [[True, False, False, False],         [False, False, True, True]],
+            [[True, False],                       [False, False]],
             # vertical, right, top down,          then horizontal, bottom, right to left
-            [[False, True, False, False],         [False, False, True, True]],
+            [[False, True],                       [False, False]],
             # horizontal, bottom, right to left,  then vertical, left, bottom to top
-            [[False, False, False, False],        [True, False, True, True]],
+            [[False, False],                      [True, False]],
             # vertical, left, top down,           then horizontal, bottom, left to right
-            [[True, True, False, False],          [True, False, True, True]]
+            [[True, True],                        [True, False]]
         ]
 
     def yield_small_geometries(self):
+
         a,b = self.s_layouts[self.layout]
+
         if self.layout % 2 == 0:
             # arrange windows horizontally first, then vertically
-            C = chain(self._h(*a), self._v(*b))
+            C = chain(self._h(*a), self._v(*b, True))
         else:
             # arrange windows vertically first, then horizontally
-            C = chain(self._v(*a), self._h(*b))
+            C = chain(self._v(*a), self._h(*b, True))
         for c in C:
             yield c
 
-    # consecutively yield geometries of vertically arranged windows
-    def _v(self, left=True, top=True, keep_going = False, tail=False):
+    # consecutively yield geometries of vertically arranged windows;
+    # keep_going means continue yielding geometries even if work area space is filled up
+    def _v(self, left=True, top=True, keep_going = False):
 
         # horizontal position of all windows, either left or right border of work area
         x = self.s.wa_x if left else self.s.wa_x + self.s.wa_w - self.V[0]
@@ -863,12 +870,13 @@ class Layouter:
         Y = [self.s.wa_y, self.s.wa_y + self.s.wa_h - self.V[1]]
         # max vertical screen space we're going to fill up, in terms of where
         # the edge of a window goes
-        M = self.s.wa_h - self.V[1]/2
+        Ymax = self.s.wa_h - self.V[1]/2
 
-        # if tail is true leave room for horizontally arranged windows
-        if tail:
+        # if keep_going is true we're on the tail end of a _h,_v call, so leave room for
+        # horizontally arranged windows
+        if keep_going:
             Y = [ Y[0] + self.H[1], Y[1] - self.H[1]]
-            M -= self.H[1]
+            Ymax -= self.H[1]
 
         # vertical starting position
         y = Y[0] if top else Y[1]
@@ -878,17 +886,17 @@ class Layouter:
         offset = 0 if self.collapse else self.V[1]
 
         total = 0
-        while total < M or keep_going:
+        while total < Ymax or keep_going:
             # make sure y is set so that the window stays within the work area
             y = min( max( self.s.wa_y, y ), self.s.wa_y + self.s.wa_h - self.V[1] )
             yield [x, y, self.v[0], self.v[1]]
             y += sign * offset
             total += offset
 
-    # consecutively yield geometries of horizontally arranged windows
-    def _h(self, left = True, top = True, keep_going = False, tail = False):
+    # consecutively yield geometries of horizontally arranged windows;
+    # keep_going means continue yielding geometries even if work area space is filled up
+    def _h(self, left = True, top = True, keep_going = False):
 
-        # vertical position, either at top or bottom of work area
         # vertial position of all windows, either top or right bottom of work area
         y = self.s.wa_y if top else self.s.wa_y + self.s.wa_h - self.H[1]
 
@@ -896,12 +904,13 @@ class Layouter:
         X = [self.s.wa_x, self.s.wa_x + self.s.wa_w - self.H[0]]
         # max horizonantal screen space we're going to fill up, in terms of where
         # the edge of a window goes
-        M = self.s.wa_w - self.H[0]/2
+        Xmax = self.s.wa_w - self.H[0]/2
 
-        # if tail is true leave room for horizontally arranged windows
-        if tail:
+        # if keep_going is true we're on the tail end of a _v,_h call, so leave room for
+        # vertically arranged windows
+        if keep_going:
             X = [ X[0] + self.V[0], X[1] - self.V[0]]
-            M -= self.V[0]
+            Xmax -= self.V[0]
 
         # horizontal starting position
         x = X[0] if left else X[1]
@@ -911,7 +920,7 @@ class Layouter:
         offset = 0 if self.collapse else self.H[0]
 
         total = 0
-        while total < M or keep_going:
+        while total < Xmax or keep_going:
             # make sure x is set so that the window stays within the work area
             x = min( max( self.s.wa_x, x ), self.s.wa_x + self.s.wa_w - self.H[0] )
             yield [x, y, self.h[0], self.h[1]]
