@@ -103,11 +103,16 @@ Well,
 
 - the screens directory with example screenshots.
 - the mpvwincycle.py Python script, which does all the work
-- an mpv wrapper shell script, to provide for sockets
+- an mpv wrapper shell script, to provide for sockets and no-keepaspect-window option
 - an example rc.xml file snippet, with Openbox keybindings I use plus explanations.
 
-So regarding the commands the Python script reads and understands the rc.xml file
-can serve as sort of a documentation.
+Note that we need the --no-keepaspect-window mpv option, or else mpv keeps window
+geometries locked to the aspect ratio of the video and won't honor resize operations
+issued from the window manager. You might just as well put that option into your
+config file.
+
+Additionally, regarding the commands the Python script reads and understands, the
+rc.xml file can serve as sort of a documentation.
 
 
 What do I need to do?
