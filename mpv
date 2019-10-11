@@ -36,5 +36,7 @@ pgrep -f "$mpv " >/dev/null && extra_opts="$extra_opts --mute"
 # launch mpv executable
 #
 
-# use absolute path to executable, to not recursively call this script
-exec $mpv --input-ipc-server="$socket" $extra_opts "$@"
+# use absolute path to executable, to not recursively call this script;
+# Note: we need no-keepaspect-window or else mpv won't accept window manager
+#       geometry hints; you may just as well put it into your config
+exec $mpv --input-ipc-server="$socket" --no-keepaspect-window $extra_opts "$@"
