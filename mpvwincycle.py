@@ -8,6 +8,7 @@ import traceback
 import socket
 import select
 import re
+import time
 import ewmh
 from Xlib import X
 from time import sleep
@@ -737,7 +738,9 @@ class MPVSockDispatcher():
 
         try:
 
-            while inputs or outputs:
+            t_end = time.time() + 3
+            # give up after 3 seconds max, if necessary
+            while (inputs or outputs) and time.time() < t_end:
 
                 readable, writable, exceptional = select.select(inputs, outputs, inputs, 1)
 
@@ -764,7 +767,15 @@ class MPVSockDispatcher():
             n_success = sum([1 for r in retlist if r and r['error'] == 'success'])
             self.ok = n_success == n_sockets
 
-            if self.ok: self.result = retlist
+            if self.ok:
+                self.result = retlist
+            else:
+                if inputs:
+                    error('input socket communication failure')
+                elif outputs:
+                    error('output socket communication failure')
+                else:
+                    error('socket communication failure')
 
         except:
             traceback.print_exc(file=sys.stdout)
