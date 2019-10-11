@@ -770,10 +770,16 @@ class MPVSockDispatcher():
             traceback.print_exc(file=sys.stdout)
             pass
 
+
+###
+### Class that calculates window geometries/positions for the various layouts
+###
 class Layouter:
 
-    # collapse means don't distribute small windows across work area but rather put them all
-    # (i.e. collapse them all into) the same position; this is True for PIP layouts
+    ### collapse means don't distribute small windows across work area but
+    ### rather put them all (i.e. collapse them all into) the same position;
+    ### this is True for PIP layouts
+    ###
     def __init__(self, screen=None, wdiff=0, hdiff=0, l = 0, collapse = False):
 
         assert(screen)
@@ -785,8 +791,10 @@ class Layouter:
         self.collapse = collapse # whether to collapse all small windows into one position,
                                  # for pip layout
 
-        # we now calculate the dimensions of the smaller windows, given the screen space and
-        # the dimensions of the large one; this calculation includes border decorations
+        ###
+        ### we now calculate the dimensions of the smaller windows, given the
+        ### screen space and the dimensions of the large one; this calculation
+        ### includes border decorations
 
         # height of (inner) small window in a top/down arrangement w/ respect to large window
         # the small windows are then arranged horizontally
@@ -821,14 +829,14 @@ class Layouter:
         # parameters for _h,_v calls (even array entries) or _v,_h calls (odd array entries)
         self.s_layouts = [
 
-            # the following comments describe how small windows are arranged, in terms of
-            # - whether they are arranged in horizontal or vertical fashion
-            # - work area border where the first window is placed (top, bottom, left, right)
-            # - direction of window arrangement.
-            # Horizontal or vertical is determined by the array index (see yield_small_geometries);
-            # even index means horizontal, odd vertical.
+            ###
+            ### the following comments describe how small windows are arranged, in terms of
+            ### - whether they are arranged in horizontal or vertical fashion
+            ### - work area border where the first window is placed (top, bottom, left, right)
+            ### - direction of window arrangement.
+            ### Horizontal or vertical is determined by the array index (see yield_small_geometries);
+            ### even index means horizontal, odd vertical.
 
-            # horizontal, top, left to right,     then vertical, right, top to bottom
             [[True, True],                        [False, True]],
             # vertical, right, bottom to top,     then horizontal, top, right to left
             [[False, False],                      [ False, True]],
@@ -846,6 +854,9 @@ class Layouter:
             [[True, True],                        [True, False]]
         ]
 
+    ### consecutively yield geometries of windows according to current layout;
+    ### user interface of this class
+    ###
     def yield_small_geometries(self):
 
         a,b = self.s_layouts[self.layout]
@@ -859,8 +870,10 @@ class Layouter:
         for c in C:
             yield c
 
-    # consecutively yield geometries of vertically arranged windows;
-    # keep_going means continue yielding geometries even if work area space is filled up
+    ### consecutively yield geometries of vertically arranged windows;
+    ### keep_going means continue yielding geometries even if work area space is
+    ### filled up
+    ###
     def _v(self, left=True, top=True, keep_going = False):
 
         # horizontal position of all windows, either left or right border of work area
@@ -893,8 +906,10 @@ class Layouter:
             y += sign * offset
             total += offset
 
-    # consecutively yield geometries of horizontally arranged windows;
-    # keep_going means continue yielding geometries even if work area space is filled up
+    ### consecutively yield geometries of horizontally arranged windows;
+    ### keep_going means continue yielding geometries even if work area space is
+    ### filled up
+    ###
     def _h(self, left = True, top = True, keep_going = False):
 
         # vertial position of all windows, either top or right bottom of work area
